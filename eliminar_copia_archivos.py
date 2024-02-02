@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 # Ruta del directorio que deseas listar
 #ruta = 'D:\D_lahis\Videos\Youtube''\\'
-ruta = 'D:\D_lahis\Music''\\'
+ruta = 'D_el_path_que_sea''\\'
 tipo_archivo = '.mp3'
 marca_de_copia = " (1)"
 #marca_de_copia = " - copia"
