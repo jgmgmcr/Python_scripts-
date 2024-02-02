@@ -1,3 +1,3 @@
 # Python_scripts-
 
-Sencillas utildades en python
+Sencillas utilidades en python
