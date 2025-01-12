@@ -121,7 +121,7 @@ class Pong:
     def __init__(self):
         pygame.init()
         self.pantalla = pygame.display.set_mode((ANCHO, ALTO))
-        pygame.display.set_caption("Pong con Dificultades")
+        pygame.display.set_caption("Pong")
         self.fuente = pygame.font.Font(None, 34)
         
         # Configuraciones iniciales
@@ -131,7 +131,8 @@ class Pong:
         self.num_pelotas = num_pelotas  # Por defecto, inicia con 3 pelotas
         
         # Reinicia el juego al comenzar la partida
-        self.reiniciar_juego_completo() # Reinicia el juego completo, volviendo a la pantalla de inicio.
+        self.reiniciar_juego_nueva_pelota() # Reinicia el juego completo, volviendo a la pantalla de inicio.
+
 
     # Reinicia el juego completo, volviendo a la pantalla de inicio.    
     def reiniciar_juego_completo(self):
@@ -145,10 +146,15 @@ class Pong:
         # Presentación pantalla de inicio
         def mostrar_texto(texto, y):
             """Mostrar texto centrado en la pantalla"""
-            titulo_y_texto = "Pong \n\n" + texto
-            texto_render = self.fuente.render(titulo_y_texto, True, BLANCO)
+            # Renderiza el título del juego
+            titulo_render = self.fuente.render("Pong", True, BLANCO)
+            titulo_rect = titulo_render.get_rect(center=(ANCHO // 2, ALTO // 2 - 180))
+            self.pantalla.blit(titulo_render, titulo_rect)
+            # Renderiza el texto proporcionado
+            texto_render = self.fuente.render(texto, True, BLANCO)
             texto_rect = texto_render.get_rect(center=(ANCHO // 2, ALTO // 2 + y))
             self.pantalla.blit(texto_render, texto_rect)
+
         
         # Opciones de configuración
         seleccionando = True
@@ -265,7 +271,6 @@ class Pong:
         if not hasattr(self, 'pelotas_jugadas'):
             self.pelotas_jugadas = 0
         self.pelotas_jugadas += 1
-
 
     def manejar_eventos(self):
         for evento in pygame.event.get():
@@ -393,7 +398,7 @@ class Pong:
         self.pantalla.fill(FONDO)
         
         # Determinar ganador 
-        if self.puntuacion_izq >= PUNTOS_MAXIMO:
+        if self.puntuacion_izq >= num_pelotas:
             texto_ganador = self.fuente.render("¡Jugador Izquierdo Gana!", True, BLANCO)
         else:
             texto_ganador = self.fuente.render("¡Jugador Derecho Gana!", True, BLANCO)
@@ -437,7 +442,7 @@ class Pong:
                         return True
         return False
     
-        pygame.time.wait(2000)  # Esperar 2 segundos antes de reiniciar el juego completo
+        pygame.time.wait(3000)  # Esperar 2 segundos antes de reiniciar el juego completo
         self.reiniciar_juego_completo()
 
 # Ejecutar el juego
@@ -446,5 +451,6 @@ if __name__ == "__main__":
     if juego.pantalla_inicio():
         juego.ejecutar_juego()
     pygame.quit()
-    
 
+
+#####   falla la seleccion en la configuración del juego
