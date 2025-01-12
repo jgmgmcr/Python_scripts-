@@ -292,7 +292,7 @@ class Pong:
         
         return True
 
-     def dibujar(self):
+    def dibujar(self):
         # Limpiar pantalla
         self.pantalla.fill(FONDO)
         
