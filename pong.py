@@ -1,21 +1,66 @@
-# Este pong presenta varias matices a mejorar como son:
-# Contador de pelotas jugadas tras la primera partida
-# Abandono  de juego -> reinicio sin opciones
+# juego PONG
+
+#############################   PASOS  ###################################
+### 1. Crear la pantalla de juego
+## 1.1 Configuración modelidades de juego
+## 1.1.1 Número jugadores
+## 1.1.2 Dificultad jugador-ia - En caso de 1 jugador
+## 1.1.3 Velocidad de la pelota
+## 1.1.4 Número de pelotas  jugar
+### 2. Crear y mover las raquetas
+### 3. Crear la pelota y moverla
+### 4. Opciones y pantalla inicial
+### 5. Crearla dinamica de juego
+## 5.1 Detectar colisiones con las raquetas
+## 5.2 Detectar colisiones con los bordes
+## 5.3 Detectar cuando la pelota marca punto
+## 5.4 Reiniciar-Continuar el juego
+## 5.5 Mostrar el marcador
+### 6. Finalizar el juego
+## 6.1 Mostrar el ganador
+## 6.2 Volver a la pantalla inicial
+##########################################################################
 
 import pygame
 import random
 
+### 1. Crear la pantalla de juego
 # Configuración de la pantalla
 ANCHO = 800  # Ancho de la ventana
 ALTO = 600   # Alto de la ventana
 BLANCO = (255, 255, 255)
 FONDO = (1, 87, 155)  # NEGRO = (0, 0, 0) 
 COLOR_BARRA = (200, 200, 200)
-PUNTOS_MAXIMO = 7  # Puntos para ganar el juego
 
-# Clase para la raqueta
-class Raqueta(pygame.sprite.Sprite):   # La clase Raqueta hereda de pygame.sprite.Sprite, lo que la hace compatible con los grupos de sprites de Pygame. Esto permite gestionar múltiples objetos en el juego de manera eficiente.
-    def __init__(self, x, y, velocidad=5): # Posición y velocidad inicial de la raqueta
+## 1.1 Configuración modelidades de juego
+## 1.1.1 Número jugadores
+num_jugadores = 1
+jugadores = {
+    '1': 1, 
+    '2': 2}
+## 1.1.2 Dificultad jugador-ia - En caso de 1 jugador
+dificultad = 'media'
+dificultades = {
+    'facil': 0.4,   # Mayor probabilidad de error
+    'media': 0.2,   # Menos probabilidad de error
+    'dificil': 0.05 # Casi ningún error
+}
+
+## 1.1.3 Velocidad de la pelota y de las raquetas
+velocidad = 'media'
+# Velocidades variables
+velocidades = {
+    'lenta': 3,
+    'media': 5,
+    'rapida': 7
+}
+## 1.1.4 Número de pelotas  jugar
+num_pelotas = 3
+
+### 2. Crear y mover las raquetas
+# Raqueta
+class Raqueta(pygame.sprite.Sprite):  # La clase Raqueta hereda de pygame.sprite.Sprite, lo que la hace compatible con los grupos de sprites de Pygame. Esto permite gestionar múltiples objetos en el juego de manera eficiente.
+    def __init__(self, x, y, velocidad): # Posición y velocidad inicial de la raqueta
         super().__init__()
         self.image = pygame.Surface((10, 100)) # Superficie rectangular que representa la raqueta, con tamaño (10, 100) (ancho x alto).
         self.image.fill(COLOR_BARRA) # Colorea la raqueta con el color definido por COLOR_BARRA
@@ -29,43 +74,19 @@ class Raqueta(pygame.sprite.Sprite):   # La clase Raqueta hereda de pygame.sprit
             self.rect.y -= self.velocidad
         elif not arriba and self.rect.bottom < ALTO:
             self.rect.y += self.velocidad
-
-    def mover_ia(self, pelota, dificultad='facil'):  # Movimiento automatizado de raqueta - pelota indica la posición
-        # Probabilidad de error basada en la dificultad
-        error_prob = {
-            'facil': 0.4,   # Mayor probabilidad de error
-            'medio': 0.2,   # Menos probabilidad de error
-            'dificil': 0.05 # Casi ningún error
-        }
-        
+    
+    def mover_ia(self, pelota, dificultad):
         # Simular error de movimiento
-        if random.random() < error_prob.get(dificultad, 0.2):
+        if random.random() < dificultades.get(dificultad, 0.2):
             # Movimiento aleatorio o no moverse
             if random.random() < 0.5:  # La raqueta IA no se mueve con < 0,5 de probabilidad
                 return
-            elif random.random() < 0.5:  # La raqueta IA se mueve aleatoriamente con <0,5 de probabilidad
-                self.mover(arriba=random.choice([True, False]))
-            return
+            self.mover(arriba=random.choice([True, False]))  # La raqueta IA se mueve hacia arriba o hacia abajo con la misma probabilidad
 
         # Lógica de seguimiento de la pelota con cierta imprecisión
-        error_margen = {
-            'facil': 50,    # Mayor margen de error
-            'medio': 25,    # Margen de error moderado
-            'dificil': 10   # Casi preciso
-        }
-        
-        margen = error_margen.get(dificultad, 25)
-        
-        # Añadir un pequeño error aleatorio
-        error = random.randint(-margen, margen)
-        
-        # Movimiento de la raqueta IA basado en la pelota
-        # Compara el centro vertical de la raqueta (self.rect.centery) con la posición de la pelota ajustada por el error
-        if self.rect.centery < pelota.rect.centery + error: # Si la raqueta está por debajo, se mueve hacia abajo.
-            self.mover(arriba=False)
-        elif self.rect.centery > pelota.rect.centery + error: # Si está por encima, se mueve hacia arriba.
-            self.mover(arriba=True)
-
+        margen = dificultades.get(dificultad, 0.2) * 100  # Margen de error por dificultad (en pixeles)
+        error = random.randint(-margen, margen)  # Error aleatorio
+        self.rect.y = pelota.rect.y - self.rect.height / 2 - error  # Movimiento de la raqueta IA basado en la pelota
 
 # Clase para la pelota con velocidades variables
 # Su funcionalidad incluye la inicialización de la posición, la asignación de velocidades variables, el movimiento, y la detección de colisiones con los bordes superior e inferior de la pantalla.
@@ -77,14 +98,6 @@ class Pelota(pygame.sprite.Sprite):
         self.rect = self.image.get_rect() # Rectángulo que define la posición y el área de colisión de la pelota
         self.rect.center = (ANCHO // 2, ALTO // 2) # Posición inicial de la pelota donde ANCHO y ALTO son las dimensiones de la ventana.
         # En Python, se usa el operador barra doble // para realizar una división. Este operador // divide al primer número por el segundo número y redondea hacia abajo el resultado al entero más cercano
-
-        
-        # Velocidades variables
-        velocidades = {
-            'lenta': 3,
-            'media': 5,
-            'rapida': 7
-        }
         
         velocidad_base = velocidades.get(velocidad, 5) # Si no se especifica un nivel de velocidad, por defecto se utiliza 'media' (5 píxeles por frame)
         
@@ -103,7 +116,6 @@ class Pelota(pygame.sprite.Sprite):
         if self.rect.top <= 0 or self.rect.bottom >= ALTO:  # Si la pelota alcanza el borde superior (self.rect.top <= 0) o inferior (self.rect.bottom >= ALTO)
             self.velocidad_y *= -1 # Invierte la dirección vertical multiplicando self.velocidad_y por -1. Esto cambia la dirección de la pelota en el eje y simulando un rebote.
 
-
 # Clase principal del juego
 class Pong:
     def __init__(self):
@@ -113,62 +125,36 @@ class Pong:
         self.fuente = pygame.font.Font(None, 34)
         
         # Configuraciones iniciales
-        self.modo_2_jugadores = False  # Por defecto, inicia en modo 1 jugador
-        self.dificultad_ia = 'medio'
-        self.velocidad_juego = 'media'
+        self.modo_2_jugadores = num_jugadores  # Por defecto, inicia en modo 1 jugador
+        self.dificultad_ia = dificultad  # Por defecto, inicia en dificultad media
+        self.velocidad_juego = velocidad  # Por defecto, inicia en velocidad media
+        self.num_pelotas = num_pelotas  # Por defecto, inicia con 3 pelotas
         
-        # Reinicia el juego al comenzar
-        self.reiniciar_juego()
+        # Reinicia el juego al comenzar la partida
+        self.reiniciar_juego_completo() # Reinicia el juego completo, volviendo a la pantalla de inicio.
 
-    def reiniciar_juego(self):
-        # Crear una nueva pelota con la velocidad configurada
-        self.pelota = Pelota(self.velocidad_juego)
-
-        # Las raquetas mantienen su configuración inicial
-        velocidades = {
-            'lenta': 3,
-            'media': 5,
-            'rapida': 7
-        }
-        velocidad_raqueta = velocidades.get(self.velocidad_juego, 5)
-
-        self.raqueta_izq = Raqueta(50, ALTO // 2 - 50, velocidad_raqueta)
-        self.raqueta_der = Raqueta(ANCHO - 60, ALTO // 2 - 50, velocidad_raqueta)
-
-        # La puntuación y el modo de juego se mantienen constantes
-        if not hasattr(self, 'puntuacion_izq'):
-            self.puntuacion_izq = 0
-        if not hasattr(self, 'puntuacion_der'):
-            self.puntuacion_der = 0
-
-        # El contador de pelotas jugadas se incrementa
-        if not hasattr(self, 'pelotas_jugadas'):
-            self.pelotas_jugadas = 0
-        self.pelotas_jugadas += 1
-
-        # Asegurar que el modo de juego no cambia
-        # No se toca `self.modo_2_jugadores` ni `self.dificultad_ia`
-
+    # Reinicia el juego completo, volviendo a la pantalla de inicio.    
     def reiniciar_juego_completo(self):
-        """Reinicia el juego completo, volviendo a la pantalla de inicio."""
-        self.puntuacion_izq = 0
-        self.puntuacion_der = 0
-        self.pelotas_jugadas = 0
-        self.pantalla_inicio()
+        self.puntuacion_izq = 0  # Puntuación del jugador izquierdo
+        self.puntuacion_der = 0  # Puntuación del jugador derecho    
+        self.pelotas_jugadas = 0  # Contador de pelotas jugadas
+        self.pantalla_inicio()  # Muestra la pantalla de inicio
 
+    # Pantalla de inicio con opciones de configuración paso a paso
     def pantalla_inicio(self):
-        """Pantalla de inicio con opciones de configuración paso a paso"""
-        def mostrar_texto(texto, y_offset):
+        # Presentación pantalla de inicio
+        def mostrar_texto(texto, y):
             """Mostrar texto centrado en la pantalla"""
-            texto_render = self.fuente.render(texto, True, BLANCO)
-            texto_rect = texto_render.get_rect(center=(ANCHO // 2, ALTO // 2 + y_offset))
-            self.pantalla.blit(texto_render, texto_rect)    
-
+            titulo_y_texto = "Pong \n\n" + texto
+            texto_render = self.fuente.render(titulo_y_texto, True, BLANCO)
+            texto_rect = texto_render.get_rect(center=(ANCHO // 2, ALTO // 2 + y))
+            self.pantalla.blit(texto_render, texto_rect)
+        
+        # Opciones de configuración
         seleccionando = True
         modo_seleccionado = None
-        dificultad_ia = 'medio'  # Valor por defecto
-        velocidad_juego = 'media'  # Valor por defecto  
 
+        # Muestra el título y las opciones de configuración
         while seleccionando:
             self.pantalla.fill(FONDO)
 
@@ -192,19 +178,25 @@ class Pong:
                 mostrar_texto("V (Media)", 0)
                 mostrar_texto("R (Rápida)", 50)
                 mostrar_texto("Pulsa la tecla correspondiente", 100)
-            # Paso 4: Confirmar inicio
+            # Paso 4: Elegir número de pelotas
+            elif not hasattr(self, 'num_pelotas_confirmada'):
+                mostrar_texto("4. Número de Pelotas:", -100)
+                mostrar_texto("1 (Una)", -50)
+                mostrar_texto("3 (Tres)", 0)
+                mostrar_texto("5 (Cinco)", 50)
+                mostrar_texto("Pulsa la tecla correspondiente", 100)
+            # Paso 5: Confirmar inicio
             else:
                 mostrar_texto("Configuración Completa", -50)
                 mostrar_texto("Pulsa ESPACE para iniciar", 0)
-                pygame.display.flip()   
+                pygame.display.flip()   # Actualiza la pantalla
 
-            pygame.display.flip()   
-
-            # Gestión de eventos
+            
+            # Gestión de eventos en la configuración
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
                     return False
-                if evento.type == pygame.KEYDOWN:
+                elif evento.type == pygame.KEYDOWN:
                     if not modo_seleccionado:
                         if evento.key == pygame.K_1:
                             modo_seleccionado = "1 jugador"
@@ -233,13 +225,45 @@ class Pong:
                         elif evento.key == pygame.K_r:
                             velocidad_juego = 'rapida'
                             setattr(self, 'velocidad_confirmada', True)
-                    elif hasattr(self, 'velocidad_confirmada'):
+                    elif not hasattr(self, 'num_pelotas_confirmada'):
+                        if evento.key == pygame.K_1:
+                            num_pelotas = 1
+                            setattr(self, 'num_pelotas_confirmada', True)
+                        elif evento.key == pygame.K_3:
+                            num_pelotas = 3
+                            setattr(self, 'num_pelotas_confirmada', True)
+                        elif evento.key == pygame.K_5:
+                            num_pelotas = 5
+                            setattr(self, 'num_pelotas_confirmada', True)
+                    elif hasattr(self, 'num_pelotas_confirmada'):
                         if evento.key == pygame.K_SPACE:
                             self.dificultad_ia = dificultad_ia
                             self.velocidad_juego = velocidad_juego
                             return True 
     
         return False
+
+    def reiniciar_juego_nueva_pelota(self):
+        # Crear una nueva pelota con la velocidad configurada
+        self.pelota = Pelota(self.velocidad_juego)
+
+        # velocidad juego
+        velocidad_raqueta = velocidades.get(self.velocidad_juego, 5) # Velocidad de las raquetas, por defecto 'media' (5 píxeles por frame)
+
+        self.raqueta_izq = Raqueta(50, ALTO // 2 - 50, velocidad_raqueta)
+        self.raqueta_der = Raqueta(ANCHO - 60, ALTO // 2 - 50, velocidad_raqueta)
+
+        # La puntuación y el modo de juego se mantienen constantes
+        if not hasattr(self, 'puntuacion_izq'):
+            self.puntuacion_izq = 0
+        if not hasattr(self, 'puntuacion_der'):
+            self.puntuacion_der = 0
+
+        # El contador de pelotas jugadas se incrementa
+        if not hasattr(self, 'pelotas_jugadas'):
+            self.pelotas_jugadas = 0
+        self.pelotas_jugadas += 1
+
 
     def manejar_eventos(self):
         for evento in pygame.event.get():
@@ -268,7 +292,7 @@ class Pong:
         
         return True
 
-    def dibujar(self):
+     def dibujar(self):
         # Limpiar pantalla
         self.pantalla.fill(FONDO)
         
@@ -299,14 +323,14 @@ class Pong:
         
         # Contador de pelotas
         texto_pelotas = self.fuente.render(
-            f"Pelotas: {self.pelotas_jugadas}/{PUNTOS_MAXIMO}", 
+            f"Pelotas: {self.pelotas_jugadas}/{num_pelotas}", 
             True, BLANCO
         )
         texto_pelotas_rect = texto_pelotas.get_rect(center=(ANCHO//2, ALTO-30))
         self.pantalla.blit(texto_pelotas, texto_pelotas_rect)
         
         # Actualizar pantalla
-        pygame.display.flip()
+        pygame.display.flip()               
 
     def actualizar(self):
         # Mover pelota
@@ -321,11 +345,11 @@ class Pong:
         lado = self.punto_anotado()
         if lado:
             self.pelotas_jugadas += 1
-            if self.puntuacion_izq >= PUNTOS_MAXIMO or self.puntuacion_der >= PUNTOS_MAXIMO:
+            if self.puntuacion_izq >= num_pelotas or self.puntuacion_der >= num_pelotas:
                 self.mostrar_ganador()
                 self.reiniciar_juego_completo()
             else:
-                self.reiniciar_juego()
+                self.reiniciar_juego_nueva_pelota()
 
     def ejecutar_juego(self):
         """Bucle principal del juego."""
@@ -414,11 +438,11 @@ class Pong:
         pygame.time.wait(2000)  # Esperar 2 segundos antes de reiniciar el juego completo
         self.reiniciar_juego_completo()
 
-
 # Ejecutar el juego
 if __name__ == "__main__":
     juego = Pong()
     if juego.pantalla_inicio():
         juego.ejecutar_juego()
     pygame.quit()
+    
 
