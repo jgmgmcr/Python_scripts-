@@ -191,6 +191,8 @@ class Pong:
                 mostrar_texto("Pulsa ESPACE para iniciar", 0)
                 pygame.display.flip()   # Actualiza la pantalla
 
+            pygame.display.flip()   # Actualiza la pantalla
+
             
             # Gestión de eventos en la configuración
             for evento in pygame.event.get():
